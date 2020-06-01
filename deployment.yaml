@@ -30,6 +30,18 @@ spec:
       - image: iot-healthcheck
         name: iot-healthcheck
         resources: {}
+        env: 
+        - name: ELASTIC_APM_SERVER_URL 
+          value: "http://apm-server-apm-http:8200" 
+        - name: ELASTIC_APM_SERVICE_NAME 
+          value: "iot_healthcheck" 
+        - name: ELASTIC_APM_APPLICATION_PACKAGES 
+          value: "com.examples" 
+        - name: ELASTIC_APM_ENVIRONMENT 
+          value: test 
+        - name: ELASTIC_APM_LOG_LEVEL 
+          value: DEBUG 
+        
 status: {}
 ---
 apiVersion: v1
