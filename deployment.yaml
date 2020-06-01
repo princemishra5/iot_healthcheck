@@ -54,10 +54,10 @@ metadata:
   namespace: semics
 spec:
   ports:
-  - name: 8080-8080
-    port: 8080
+  - name: 5000-5000
+    port: 5000
     protocol: TCP
-    targetPort: 8080
+    targetPort: 5000
   selector:
     app: iot-healthcheck
   type: ClusterIP
