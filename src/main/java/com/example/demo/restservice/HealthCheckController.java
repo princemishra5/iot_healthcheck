@@ -61,6 +61,6 @@ public class HealthCheckController {
       logger.info("User fetch request received in frontend server for user id"+id);  
         
       return restTemplate.exchange(
-         "http://10.0.149.61:5000/fetchUser/id", HttpMethod.GET, entity, String.class).getBody();
+         "http://10.0.149.61:5000/fetchUser/{id}", HttpMethod.GET, entity, String.class).getBody();
     }
 }
