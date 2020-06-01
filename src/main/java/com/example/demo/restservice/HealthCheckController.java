@@ -44,8 +44,9 @@ public class HealthCheckController {
       headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
       HttpEntity<String> entity = new HttpEntity<String>(headers);
       
+        
       return restTemplate.exchange(
-         "http://localhost:5000/ping", HttpMethod.GET, entity, String.class).getBody();
+         "http://10.0.149.61:5000/ping", HttpMethod.GET, entity, String.class).getBody();
 
     }
 }
