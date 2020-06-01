@@ -1,0 +1,107 @@
+#!/usr/bin/env groovy
+
+def PROJECT = "iot-healthcheck"
+def TEAM = "semics"
+def label = "${PROJECT}-${UUID.randomUUID().toString()}"
+def MAVEN_OPTIONS = "-DskipTests"
+def IMAGE_URL="acrsharedcommon40853.azurecr.io"
+def APP_CLUSTER_URL="sample-java-app-dev-a0501ad2.hcp.westus2.azmk8s.io"
+
+podTemplate(
+    label: label,
+    containers: [
+        containerTemplate(name: 'maven', image: 'maven:3.3.9-jdk-8-alpine', ttyEnabled: true, command: 'cat'),
+        containerTemplate(name: 'docker', image: 'docker:18.02', ttyEnabled: true, command: 'cat'),
+        containerTemplate(name: 'kubectl', image: 'krprince/kubectl_kustomize:latest', ttyEnabled: true, command: 'cat')
+    ],
+    volumes: [
+        hostPathVolume(hostPath: '/var/run/docker.sock', mountPath: '/var/run/docker.sock'),
+        hostPathVolume(hostPath: '/root/.m2', mountPath: '/root/.m2')
+    ]
+) {
+    node(label) {
+        def TAG
+        def IMAGE_NAME = "${TEAM}/${PROJECT.toLowerCase()}"
+        stage ('Checkout') {
+            checkout scm
+            TAG = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+        }
+
+        stage ('Build') {
+            container ('maven') {
+                sh """
+                mvn clean install $MAVEN_OPTIONS
+                """
+            }
+        }
+        
+        stage ('Test') {
+            container ('maven') {
+                sh """
+                mvn test
+                """
+            }
+        }
+
+        stage ('Docker build and push') {
+            container ('docker') {
+
+                          docker.withRegistry("https://${IMAGE_URL}", 'registry-credentials-id') {
+                          def IMAGE_NAME_WITH_TAG = "${TEAM}/${PROJECT.toLowerCase()}:${TAG}"
+                          def customImage = docker.build(IMAGE_NAME_WITH_TAG)
+                            /* Push the container to the custom Registry */
+                            customImage.push()
+                         }
+
+                }
+
+
+            }
+        
+        
+        stage ('Staging') {
+            container('kubectl'){
+
+      withKubeConfig([credentialsId: 'app_k8s_secret', serverUrl: "https://${APP_CLUSTER_URL}"]) {
+                    PROJECT = PROJECT.replaceAll('_', '-')
+                   sh """
+                        cat <<EOF > kustomization.yaml
+                            commonLabels:
+                              app: $PROJECT
+                            imageTags:
+                             - name: $PROJECT
+                               newTag : $TAG
+                               newName: $IMAGE_URL/$IMAGE_NAME
+                            resources:
+                             - deployment.yaml
+                         EOF
+                     """
+
+
+
+                    sh """
+                       kustomize build . > result.yaml
+                       cat result.yaml
+                       kubectl apply -f result.yaml
+                      """
+
+      }
+
+
+               }
+        }
+        
+        
+         stage ('Production') {
+            sh 'echo "Deploying to production environment"'
+        }
+        
+
+        
+        }
+
+    
+        
+    }
+
+
