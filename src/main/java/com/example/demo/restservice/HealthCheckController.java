@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -48,5 +49,18 @@ public class HealthCheckController {
       return restTemplate.exchange(
          "http://10.0.149.61:5000/ping", HttpMethod.GET, entity, String.class).getBody();
 
+    }
+    
+    @RequestMapping(path="fetchUser/{id}")
+    public String getMessage(@PathVariable("id") String id) {
+        
+      HttpHeaders headers = new HttpHeaders();
+      headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+      HttpEntity<String> entity = new HttpEntity<String>(headers);
+      
+      logger.info("User fetch request received in frontend server for user id"+id);  
+        
+      return restTemplate.exchange(
+         "http://10.0.149.61:5000/id", HttpMethod.GET, entity, String.class).getBody();
     }
 }
